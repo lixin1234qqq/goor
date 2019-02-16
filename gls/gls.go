@@ -93,8 +93,8 @@ func glsActivated(goid int64) bool {
 }
 
 // Initialize initialize local storage for current goroutine
-func Initialize(value map[interface{}]interface{}) {
-	setGls(goid.GoIDAsm(), value)
+func Initialize() {
+	setGls(goid.GoIDAsm(), make(map[interface{}]interface{}))
 }
 
 // Activated return whether gls is activated for current goroutine

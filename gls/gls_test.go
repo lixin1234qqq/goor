@@ -9,7 +9,7 @@ func TestGls(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		Initialize(make(map[interface{}]interface{}))
+		Initialize()
 		defer func() {
 			if "gls" != Get("name") {
 				t.Errorf("the value of key 'name' should be 'gls'")

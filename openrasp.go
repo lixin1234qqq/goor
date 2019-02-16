@@ -25,7 +25,7 @@ func init() {
 		if err != nil {
 			log.Printf("%v", err)
 		} else {
-			path := filepath.Join(confDir, "rasp.properties")
+			path := filepath.Join(confDir, "openrasp.yml")
 			err := basic.LoadProperties(path)
 			if err != nil {
 				log.Printf("%v", err)

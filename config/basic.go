@@ -26,7 +26,7 @@ func (bc *BasicConfig) GetBool(key string) bool {
 }
 
 func (bc *BasicConfig) LoadProperties(path string) error {
-	bc.basic.SetConfigType("properties")
+	bc.basic.SetConfigType("yaml")
 	bc.basic.SetConfigFile(path)
 	err := bc.basic.ReadInConfig()
 	if err != nil {

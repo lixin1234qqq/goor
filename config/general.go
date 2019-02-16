@@ -59,6 +59,12 @@ func (gc *GeneralConfig) GetString(key string) string {
 	return gc.general.GetString(key)
 }
 
+func (gc *GeneralConfig) GetInt(key string) int {
+	gc.mu.RLock()
+	defer gc.mu.RUnlock()
+	return gc.general.GetInt(key)
+}
+
 func (gc *GeneralConfig) GetInt64(key string) int64 {
 	gc.mu.RLock()
 	defer gc.mu.RUnlock()
@@ -68,6 +74,7 @@ func (gc *GeneralConfig) GetInt64(key string) int64 {
 func (gc *GeneralConfig) ReadConfig(in io.Reader) {
 	gc.mu.Lock()
 	defer gc.mu.Unlock()
+	gc.general.SetConfigType("yaml")
 	err := gc.general.ReadConfig(in)
 	if err != nil {
 		log.Printf("%v", err)
