@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/baidu/openrasp/model"
+	"github.com/baidu/openrasp/utils"
 )
 
 func CaptureHTTPRequestBody(req *http.Request, out *model.RequestBody) bool {
@@ -40,7 +41,7 @@ func CaptureHTTPRequestBody(req *http.Request, out *model.RequestBody) bool {
 		for k, v := range bc.request.PostForm {
 			vcopy := make([]string, len(v))
 			for i := range vcopy {
-				vcopy[i] = truncateString(v[i], GetGeneral().GetInt("body.maxbytes"))
+				vcopy[i] = utils.TruncateString(v[i], GetGeneral().GetInt("body.maxbytes"))
 			}
 			postForm[k] = vcopy
 		}
@@ -53,6 +54,6 @@ func CaptureHTTPRequestBody(req *http.Request, out *model.RequestBody) bool {
 	if err != nil {
 		return false
 	}
-	out.Raw = truncateString(string(all), GetGeneral().GetInt("body.maxbytes"))
+	out.Raw = utils.TruncateString(string(all), GetGeneral().GetInt("body.maxbytes"))
 	return true
 }

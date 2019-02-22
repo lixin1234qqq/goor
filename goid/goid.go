@@ -36,8 +36,6 @@ var expectedOffsetDict = map[string]uintptr{
 	"go1.11.4": 152,
 }
 
-var expectedGoidOffset = expectedOffsetDict[runtime.Version()]
-
 //after go1.9 goid offset in g struct is 152, which used as default offset value
 var goidOffset uintptr = 152
 
@@ -48,7 +46,10 @@ func init() {
 	}
 	goidField := gType.FieldByName("goid")
 	goidOffset = goidField.Offset()
-	if goidOffset != expectedGoidOffset {
+	expectedGoidOffset, ok := expectedOffsetDict[runtime.Version()]
+	if !ok {
+		panic("unsupport golang version, which should >= 1.8")
+	} else if goidOffset != expectedGoidOffset {
 		panic("unexcepted offset of 'goid' field in 'runtime.g' struct")
 	}
 }

@@ -5,6 +5,8 @@ import (
 
 	"github.com/astaxie/beego"
 	beegocontext "github.com/astaxie/beego/context"
+	"github.com/baidu/openrasp"
+	"github.com/baidu/openrasp/model"
 	"github.com/baidu/openrasp/support/orhttp"
 )
 
@@ -15,6 +17,13 @@ type beegoFilterState struct {
 }
 
 func init() {
+	if openrasp.IsAvailable() {
+		if v, err := beego.GetConfig("string", "HttpAddr", ""); err == nil {
+			openrasp.GetGlobals().SetHttpAddr(v.(string))
+		}
+		server := model.NewServer("beego", beego.VERSION)
+		openrasp.GetGlobals().SetServer(server)
+	}
 	AddFilters(beego.BeeApp.Handlers)
 }
 
