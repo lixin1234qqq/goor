@@ -12,20 +12,22 @@ type Globals struct {
 	RaspId   string
 	HttpAddr string
 
-	Language *model.Language
-	System   *model.System
-	Server   *model.Server
+	Language      *model.Language
+	System        *model.System
+	Server        *model.Server
+	ContextServer *model.ContextServer
 }
 
 func NewGlobals(rootPath string) *Globals {
 	hostname := utils.GetHostname()
 	nic, _ := getServerNic()
-	raspId := getRaspId(hostname, rootPath)
+	raspId := calculateRaspId(hostname, rootPath)
 	g := Globals{
-		Hostname: hostname,
-		RaspId:   raspId,
-		Language: model.NewLanguage(),
-		System:   model.NewSystem(nic, hostname),
+		Hostname:      hostname,
+		RaspId:        raspId,
+		Language:      model.NewLanguage(),
+		System:        model.NewSystem(nic, hostname),
+		ContextServer: model.NewContextServer(),
 	}
 	return &g
 }
@@ -66,7 +68,7 @@ func getServerNic() ([]model.Nic, error) {
 	return nics, nil
 }
 
-func getRaspId(hostname, path string) string {
+func calculateRaspId(hostname, path string) string {
 	var raspString string
 	macAddrs := utils.GetMacAddrs()
 	for _, v := range macAddrs {

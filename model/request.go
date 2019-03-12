@@ -15,8 +15,6 @@ type RequestInfo struct {
 	UrlFull      string `json:"url"`
 	UrlHost      string `json:"target"`
 	UrlPath      string `json:"path"`
-	Referer      string `json:"referer"`
-	UserAgent    string `json:"user_agent"`
 	AttackSource string `json:"attack_source"`
 	ClientIp     string `json:"client_ip"`
 	RequestId    string `json:"request_id"`
@@ -25,7 +23,7 @@ type RequestInfo struct {
 
 type RequestBody struct {
 	Raw  string     `json:"body"`
-	Form url.Values `json:"-"`
+	Form url.Values `json:"form"`
 }
 
 func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) *RequestInfo {
@@ -35,8 +33,6 @@ func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) 
 		UrlFull:      request.URL.String(),
 		UrlHost:      request.URL.Host,
 		UrlPath:      request.URL.Path,
-		Referer:      request.Header.Get("Referer"),
-		UserAgent:    request.Header.Get("User-Agent"),
 		AttackSource: request.RemoteAddr,
 		ClientIp:     request.Header.Get(clientIpHeader),
 		RequestId:    utils.GenerateRequestId(),
