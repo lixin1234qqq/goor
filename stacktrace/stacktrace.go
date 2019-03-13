@@ -2,12 +2,21 @@ package stacktrace
 
 import (
 	"runtime"
+	"strconv"
 )
 
 type Frame struct {
 	File     string
 	Line     int
 	Function string
+}
+
+func LogFormat(frames []Frame) []string {
+	formattedStacks := make([]string, len(frames))
+	for i, frame := range frames {
+		formattedStacks[i] = frame.File + "(" + frame.Function + ":" + strconv.Itoa(frame.Line) + ")"
+	}
+	return formattedStacks
 }
 
 func AppendStacktrace(frames []Frame, skip, n int) []Frame {

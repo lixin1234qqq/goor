@@ -25,6 +25,10 @@ func (bc *BasicConfig) GetBool(key string) bool {
 	return bc.basic.GetBool(key)
 }
 
+func (bc *BasicConfig) GetString(key string) string {
+	return bc.basic.GetString(key)
+}
+
 func (bc *BasicConfig) LoadProperties(path string) error {
 	bc.basic.SetConfigType("yaml")
 	bc.basic.SetConfigFile(path)

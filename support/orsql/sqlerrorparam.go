@@ -20,7 +20,7 @@ func NewSqlErrorParam(server, query, errCode, errMsg string) *SqlErrorParam {
 }
 
 func (sep *SqlErrorParam) buildPluginMessage() string {
-	return sep.Server + " error " + sep.ErrCode +" detected: " + sep.ErrMsg
+	return sep.Server + " error " + sep.ErrCode + " detected: " + sep.ErrMsg
 }
 
 func (sep *SqlErrorParam) AttackCheck() (model.InterceptCode, *model.AttackResult) {
@@ -28,7 +28,7 @@ func (sep *SqlErrorParam) AttackCheck() (model.InterceptCode, *model.AttackResul
 		switch sep.ErrCode {
 		case "1060", "1062", "1064", "1105", "1367", "1690":
 			ar := model.NewAttackResult("block", sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
-			return model.Block, nil
+			return model.Block, ar
 		}
 	}
 	return model.Ignore, nil

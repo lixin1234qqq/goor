@@ -7,7 +7,6 @@ import (
 
 	"github.com/baidu/openrasp"
 	"github.com/baidu/openrasp/model"
-	"go.elastic.co/apm"
 )
 
 func newConn(in driver.Conn, d *wrapDriver, dsnInfo DSNInfo) driver.Conn {
@@ -52,35 +51,11 @@ func (c *conn) interceptError(query string, resultError *error) {
 	if hit {
 		sqlErrorParam := NewSqlErrorParam(c.driver.driverName, query, errCode, errMsg)
 		interceptCode, _ := sqlErrorParam.AttackCheck()
+		//TODO log
 		if interceptCode == model.Block {
 			panic(openrasp.ErrBlock)
 		}
 	}
-}
-
-func (c *conn) finishSpan(ctx context.Context, span *apm.Span, resultError *error) {
-	if *resultError == driver.ErrSkip {
-		// TODO(axw) mark span as abandoned,
-		// so it's not sent and not counted
-		// in the span limit. Ideally remove
-		// from the slice so memory is kept
-		// in check.
-		return
-	}
-	switch *resultError {
-	case nil, driver.ErrBadConn, context.Canceled:
-		// ErrBadConn is used by the connection pooling
-		// logic in database/sql, and so is expected and
-		// should not be reported.
-		//
-		// context.Canceled means the callers canceled
-		// the operation, so this is also expected.
-	default:
-		if e := apm.CaptureError(ctx, *resultError); e != nil {
-			e.Send()
-		}
-	}
-	span.End()
 }
 
 func (c *conn) queryAttackCheck(query string) {
@@ -103,7 +78,7 @@ func (c *conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 		return nil, driver.ErrSkip
 	}
 	c.queryAttackCheck(query)
-	// defer c.finishSpan(&resultError)
+	defer c.interceptError(query, &resultError)
 
 	if c.queryerContext != nil {
 		return c.queryerContext.QueryContext(ctx, query, args)
@@ -126,7 +101,7 @@ func (*conn) Query(query string, args []driver.Value) (driver.Rows, error) {
 
 func (c *conn) PrepareContext(ctx context.Context, query string) (_ driver.Stmt, resultError error) {
 	c.queryAttackCheck(query)
-	//TODO defer error
+	defer c.interceptError(query, &resultError)
 	var stmt driver.Stmt
 	var err error
 	if c.connPrepareContext != nil {
@@ -153,7 +128,7 @@ func (c *conn) ExecContext(ctx context.Context, query string, args []driver.Name
 		return nil, driver.ErrSkip
 	}
 	c.queryAttackCheck(query)
-	//TODO defer error
+	defer c.interceptError(query, &resultError)
 
 	if c.execerContext != nil {
 		return c.execerContext.ExecContext(ctx, query, args)

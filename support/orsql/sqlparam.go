@@ -17,5 +17,5 @@ func NewSqlParam(server, query string) *SqlParam {
 
 func (sp *SqlParam) AttackCheck() (model.InterceptCode, *model.AttackResult) {
 	//TODO call js
-	return model.Block, nil
+	return model.Ignore, nil
 }

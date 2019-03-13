@@ -4,10 +4,14 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/baidu/openrasp"
 	"github.com/baidu/openrasp/model"
+	"github.com/baidu/openrasp/stacktrace"
+	"github.com/baidu/openrasp/utils"
 )
 
 var (
@@ -39,8 +43,53 @@ func wrapDriverName(origin string) string {
 	return "openrasp/" + origin
 }
 
+func sqlConnectionPolicyCheck(d *wrapDriver, name string) (model.InterceptCode, string) {
+	dsnInfo := d.dsnParser(name)
+	dbConnParam := NewDbConnectionParam(&dsnInfo, d.driverName)
+	interceptCode, policyResult := dbConnParam.PolicyCheck()
+	var policyLogString string
+	if interceptCode != model.Ignore {
+		policyLog := model.PolicyLog{
+			PolicyResult: policyResult,
+			Server:       openrasp.GetGlobals().Server,
+			System:       openrasp.GetGlobals().System,
+			PolicyParams: dbConnParam,
+			SourceCode:   []string{},
+			StackTrace:   strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, openrasp.GetGeneral().GetInt("log.maxstack"))), "\n"),
+			RaspId:       openrasp.GetGlobals().RaspId,
+			AppId:        openrasp.GetBasic().GetString("cloud.app_id"),
+			EventTime:    utils.CurrentISO8601Time(),
+		}
+		policyLogString = policyLog.String()
+	}
+	return interceptCode, policyLogString
+}
+
 func Open(driverName, dataSourceName string) (*sql.DB, error) {
-	return sql.Open(wrapDriverName(driverName), dataSourceName)
+	d, ok := drivers[driverName]
+	var interceptCode model.InterceptCode = model.Ignore
+	var policyLogString string
+	if ok {
+		interceptCode, policyLogString = sqlConnectionPolicyCheck(d, dataSourceName)
+		if interceptCode == model.Block {
+			if len(policyLogString) > 0 {
+				//TODO logrus
+				fmt.Print(policyLogString)
+			}
+			panic(openrasp.ErrBlock)
+		}
+	}
+	db, err := sql.Open(wrapDriverName(driverName), dataSourceName)
+	if err != nil {
+		d.interceptError(dataSourceName, &err)
+		return nil, err
+	} else {
+		if interceptCode == model.Log {
+			//TODO logrus
+			fmt.Print(policyLogString)
+		}
+	}
+	return db, err
 }
 
 func Wrap(driver driver.Driver, opts ...WrapOption) driver.Driver {
@@ -100,20 +149,36 @@ type wrapDriver struct {
 	errorInterceptor ErrorInterceptorFunc
 }
 
+func (d *wrapDriver) interceptError(name string, err *error) {
+	hit, errCode, errMsg := d.errorInterceptor(err)
+	if hit {
+		sqlErrorParam := NewSqlErrorParam(d.driverName, name, errCode, errMsg)
+		interceptCode, _ := sqlErrorParam.AttackCheck()
+		//TODO log
+		if interceptCode == model.Block {
+			panic(openrasp.ErrBlock)
+		}
+	}
+}
+
 func (d *wrapDriver) Open(name string) (driver.Conn, error) {
 	dsnInfo := d.dsnParser(name)
-	dbConnParam := NewDbConnectionParam(&dsnInfo, d.driverName)
-	interceptCode, _ := dbConnParam.PolicyCheck()
-	//TODO log
+	interceptCode, policyLogString := sqlConnectionPolicyCheck(d, name)
 	if interceptCode == model.Block {
+		if len(policyLogString) > 0 {
+			//TODO logrus
+			fmt.Print(policyLogString)
+		}
 		panic(openrasp.ErrBlock)
 	}
 	conn, err := d.Driver.Open(name)
 	if err != nil {
+		d.interceptError(name, &err)
 		return nil, err
 	} else {
 		if interceptCode == model.Log {
-			//TODO log
+			//TODO logrus
+			fmt.Print(policyLogString)
 		}
 	}
 	return newConn(conn, d, dsnInfo), nil

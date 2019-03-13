@@ -55,7 +55,7 @@ func getServerNic() ([]model.Nic, error) {
 			switch v := a.(type) {
 			case *net.IPNet:
 				if !v.IP.IsLoopback() {
-					ipString := string(v.IP[:])
+					ipString := v.IP.String()
 					nic := model.Nic{
 						Name: i.Name,
 						Ip:   ipString,

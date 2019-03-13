@@ -36,6 +36,10 @@ func (s *stmt) queryAttackCheck() {
 	s.conn.queryAttackCheck(s.query)
 }
 
+func (s *stmt) interceptError(resultError *error) {
+	s.conn.interceptError(s.query, resultError)
+}
+
 func (s *stmt) ColumnConverter(idx int) driver.ValueConverter {
 	if s.columnConverter != nil {
 		return s.columnConverter.ColumnConverter(idx)
@@ -45,7 +49,7 @@ func (s *stmt) ColumnConverter(idx int) driver.ValueConverter {
 
 func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (_ driver.Result, resultError error) {
 	s.queryAttackCheck()
-	//TODO defer error
+	defer s.interceptError(&resultError)
 	if s.stmtExecContext != nil {
 		return s.stmtExecContext.ExecContext(ctx, args)
 	}
@@ -63,7 +67,7 @@ func (s *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (_ dri
 
 func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (_ driver.Rows, resultError error) {
 	s.queryAttackCheck()
-	//TODO defer error
+	defer s.interceptError(&resultError)
 	if s.stmtQueryContext != nil {
 		return s.stmtQueryContext.QueryContext(ctx, args)
 	}

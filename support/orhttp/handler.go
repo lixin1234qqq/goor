@@ -33,7 +33,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if v := recover(); v != nil {
 			if resp.StatusCode == 0 {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusOK)
 			}
 		}
 	}()
