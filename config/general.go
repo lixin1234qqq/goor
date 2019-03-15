@@ -9,9 +9,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+type UpdateListener interface {
+	OnConfigUpdate()
+}
+
 type GeneralConfig struct {
-	general *viper.Viper
-	mu      sync.RWMutex
+	general   *viper.Viper
+	listeners []UpdateListener
+	mu        sync.RWMutex
 }
 
 func NewGeneralConfig() *GeneralConfig {
@@ -47,6 +52,12 @@ func NewGeneralConfig() *GeneralConfig {
 	}
 }
 
+func (gc *GeneralConfig) AttachListener(listener UpdateListener) {
+	gc.mu.Lock()
+	defer gc.mu.Unlock()
+	gc.listeners = append(gc.listeners, listener)
+}
+
 func (gc *GeneralConfig) GetBool(key string) bool {
 	gc.mu.RLock()
 	defer gc.mu.RUnlock()
@@ -71,19 +82,27 @@ func (gc *GeneralConfig) GetInt64(key string) int64 {
 	return gc.general.GetInt64(key)
 }
 
-func (gc *GeneralConfig) ReadConfig(in io.Reader) {
+func (gc *GeneralConfig) ReadConfig(in io.Reader) (err error) {
 	gc.mu.Lock()
-	defer gc.mu.Unlock()
+	defer func() {
+		gc.mu.Unlock()
+		if err == nil {
+			for _, l := range gc.listeners {
+				l.OnConfigUpdate()
+			}
+		}
+	}()
 	gc.general.SetConfigType("yaml")
-	err := gc.general.ReadConfig(in)
+	err = gc.general.ReadConfig(in)
 	if err != nil {
 		log.Printf("%v", err)
 	}
+	return err
 }
 
 func (gc *GeneralConfig) OnUpdate(absPath string) {
 	raw, err := os.Open(absPath)
-	if err != nil {
+	if err == nil {
 		gc.ReadConfig(raw)
 	}
 }

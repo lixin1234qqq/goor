@@ -12,6 +12,7 @@ var workSpace *common.WorkSpace
 var commonGlobals *common.Globals
 var basic *config.BasicConfig
 var general *config.GeneralConfig
+var logManager *LogManager
 
 func init() {
 	workSpace = common.NewWorkSpace()
@@ -29,6 +30,14 @@ func init() {
 	commonGlobals = common.NewGlobals(rootDir)
 	basic = config.NewBasicConfig()
 	general = config.NewGeneralConfig()
+
+	logManager, err = InitLogManager()
+	if err != nil {
+		log.Printf("Unable to init log manager, cuz of %v", err)
+		return
+	}
+	logManager.UpdateFileWriter()
+	GetGeneral().AttachListener(logManager)
 
 	confDir, err := workSpace.GetDir(common.Conf)
 	if err != nil {
@@ -64,4 +73,8 @@ func GetBasic() *config.BasicConfig {
 
 func GetGeneral() *config.GeneralConfig {
 	return general
+}
+
+func GetLog() *LogManager {
+	return logManager
 }

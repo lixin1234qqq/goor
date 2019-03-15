@@ -11,13 +11,14 @@ import (
 )
 
 type RequestInfo struct {
-	Method       string `json:"request_method"`
-	UrlFull      string `json:"url"`
-	UrlHost      string `json:"target"`
-	UrlPath      string `json:"path"`
-	AttackSource string `json:"attack_source"`
-	ClientIp     string `json:"client_ip"`
-	RequestId    string `json:"request_id"`
+	Method       string      `json:"request_method"`
+	UrlFull      string      `json:"url"`
+	UrlHost      string      `json:"target"`
+	UrlPath      string      `json:"path"`
+	AttackSource string      `json:"attack_source"`
+	ClientIp     string      `json:"client_ip"`
+	RequestId    string      `json:"request_id"`
+	Header       http.Header `json:"header"`
 	*RequestBody
 }
 

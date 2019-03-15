@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -73,8 +72,7 @@ func Open(driverName, dataSourceName string) (*sql.DB, error) {
 		interceptCode, policyLogString = sqlConnectionPolicyCheck(d, dataSourceName)
 		if interceptCode == model.Block {
 			if len(policyLogString) > 0 {
-				//TODO logrus
-				fmt.Print(policyLogString)
+				openrasp.GetLog().PolicyInfo(policyLogString)
 			}
 			panic(openrasp.ErrBlock)
 		}
@@ -85,8 +83,7 @@ func Open(driverName, dataSourceName string) (*sql.DB, error) {
 		return nil, err
 	} else {
 		if interceptCode == model.Log {
-			//TODO logrus
-			fmt.Print(policyLogString)
+			openrasp.GetLog().PolicyInfo(policyLogString)
 		}
 	}
 	return db, err
@@ -166,8 +163,7 @@ func (d *wrapDriver) Open(name string) (driver.Conn, error) {
 	interceptCode, policyLogString := sqlConnectionPolicyCheck(d, name)
 	if interceptCode == model.Block {
 		if len(policyLogString) > 0 {
-			//TODO logrus
-			fmt.Print(policyLogString)
+			openrasp.GetLog().PolicyInfo(policyLogString)
 		}
 		panic(openrasp.ErrBlock)
 	}
@@ -177,8 +173,7 @@ func (d *wrapDriver) Open(name string) (driver.Conn, error) {
 		return nil, err
 	} else {
 		if interceptCode == model.Log {
-			//TODO logrus
-			fmt.Print(policyLogString)
+			openrasp.GetLog().PolicyInfo(policyLogString)
 		}
 	}
 	return newConn(conn, d, dsnInfo), nil
